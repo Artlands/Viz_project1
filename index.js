@@ -1,5 +1,5 @@
 //API to fetch data
-const api = 'http://api.worldbank.org/v2/country/chn/indicator/SP.RUR.TOTL.ZS?format=json';
+const api = 'https://api.worldbank.org/v2/country/chn/indicator/SP.RUR.TOTL.ZS?format=json';
 
 //Loading data from API when DOM content has been loaded
 document.addEventListener("DOMContentLoaded", event => {
@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", event => {
     .then(response => response.json())
     .then(data => {
       parsedData = parseData(data);
-      // console.log(parsedData);
+      console.log(parsedData);
       drawChart(parsedData);
     })
     .catch(err => console.log(err));
