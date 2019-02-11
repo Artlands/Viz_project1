@@ -2,12 +2,10 @@
 
 // Width and height, height2 is for slider
 var margin = {top:20, right:200, bottom: 100, left: 50},
-    margin2 = {top: 430, right: 10, bottom: 20, left: 40},
+    margin2 = {top: 450, right: 10, bottom: 20, left: 40},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom,
     height2 = 500 - margin2.top - margin2.bottom;
-
-// var parseDate = d3.timeFormat("%Y");
 
 // Set up scales
 var xScale = d3.scaleTime().range([0, width]),
@@ -16,15 +14,17 @@ var xScale = d3.scaleTime().range([0, width]),
 
 // Define the axes
 var xAxis = d3.axisBottom(xScale),
-    xAxis2 = d3.axisBottom(xScale2),
-    yAxis = d3.axisLeft(yScale);
+    xAxis2 = d3.axisBottom(xScale2)
+               .ticks(10),
+    yAxis = d3.axisLeft(yScale)
+              .tickFormat(d3.format(".2f"));
 
 // Define the line
 var line = d3.line()
     .x(d => xScale(d.date))
     .y(d => yScale(d.rating))
     .curve(d3.curveLinear)
-    .defined(d => d.rating);// Hiding line value defaults of 0 for missing data
+    .defined(d => !isNaN(d.rating));// Hiding line value for missing data
 
 // Define updated yAxis
 var maxY, minY;
@@ -59,7 +59,7 @@ svg.append("defs")
 // -------------End slider part-------------
 
 // 11 Custom colors
-var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#E05A6D", "#E37756", "#E2AA59","#DBC75F", "#F2DE8A"]);
+var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#E05A6D", "#E37756", "#E2AA59","#DBC75F", "#7d7c7b"]);
 
 // Read data from csv file and preprocess it
 d3.csv("data/Data.csv"). then( data => {
@@ -75,18 +75,19 @@ d3.csv("data/Data.csv"). then( data => {
   var dataset = countries.concat(world);
   var dateArr;
 
-  dataset = dataset.map(da => {
-    dateArr = Object.keys(da)
+  dataset = dataset.map(d => {
+    dateArr = Object.keys(d)
               .filter( d => d !== "Country Name" && d !== "Series Name");
     return {
-      name: da["Country Name"],
+      name: d["Country Name"],
       values:dateArr.map( i => {
+        year = new Date();
         return {
-          date: +i,
-          rating: +da[i]
+          date: year.setFullYear(+i),
+          rating: +d[i]
         };
       }),
-      visible: (da["Country Name"] === "World" ? true : false)
+      visible: (d["Country Name"] === "World" ? true : false)
     };
   });
   console.log(dataset);
@@ -101,7 +102,14 @@ d3.csv("data/Data.csv"). then( data => {
   // console.log(yMin);
   // console.log(yMax);
 
-  xScale.domain(d3.extent(dateArr));
+  xScale.domain(d3.extent(dateArr.map(d => {
+    year = new Date();
+    return year.setFullYear(+d)
+  })));
+
+  // console.log(dateArr);
+
+  // .map(d => parseDate(d))
   yScale.domain([yMin, yMax]);
   // Setting a duplicate xdomain for burshing reference
   xScale2.domain(xScale.domain());
@@ -113,7 +121,7 @@ d3.csv("data/Data.csv"). then( data => {
 
   context.append("g")
          .attr("class", "x axis1")
-         .attr("transform", "translate(0" + height2 + ")")
+         .attr("transform", "translate(0," + height2 + ")")
          .call(xAxis2);
 
   var contextArea = d3.area()
@@ -169,13 +177,13 @@ d3.csv("data/Data.csv"). then( data => {
          .style("stroke", d => color(d.name));
 
   // Draw legend
-  var legendSpace = 450/dataset.length;
+  var legendSpace = height/dataset.length;
 
   country.append("rect")
          .attr("width", 10)
          .attr("height", 10)
-         .attr("x", width + (margin.right/3) - 15)
-         .attr("y", (d, i) => legendSpace + i * (legendSpace) - 8)
+         .attr("x", width + (margin.right/3) - 25)
+         .attr("y", (d, i) => (i + 1/2)* legendSpace - 8 )
          .attr("fill", d => d.visible? color(d.name) : "#F1F1F2")
          .attr("class", "legend-box")
          .on("click", d => {
@@ -213,8 +221,8 @@ d3.csv("data/Data.csv"). then( data => {
          });
 
     country.append("text")
-           .attr("x", width + (margin.right/3))
-           .attr("y", (d, i) => legendSpace + i * legendSpace)
+           .attr("x", width + (margin.right/3) - 10)
+           .attr("y", (d, i) => (i + 1/2) * legendSpace)
            .text(d => d.name);
 
     //Hover line
@@ -246,5 +254,61 @@ d3.csv("data/Data.csv"). then( data => {
          .attr("x", width + 20)
          .attr("y", (d, i) => legendSpace + i * legendSpace);
 
-    
+    //Add mouseover events for hover lines
+    d3.select("#mouse-tracker")
+      .on("mousemove", mousemove)
+      .on("mouseout", () => {
+        hoverDate.text(null);
+        d3.select("#hover-line")
+          .style("opacity", 1e-6);
+      });
+
+    function mousemove() {
+      // To be done
+    };
+
+    //For brusher of the slider bar at the bottom
+    function brushended() {
+      // if( !d3.event.sourceEvent) return; // Only transition after input;
+      // if( !d3.event.selection) return;// Ignore empty selection;
+      // var d0 = d3.event.selection.map(x.invert),
+      //     d1 = d0.map(d3.timeYear.round)
+
+
+      xScale.domain(brush.empty() ? xScale2.domain() : brush.extent());
+
+      svg.select(".x.axis")
+         .transition()
+         .call(xAxis);
+
+      maxY = findMaxY(dataset);
+      minY = findMinY(dataset);
+      yScale.domain([minY, maxY]);
+
+      svg.select(".y.axis")
+         .transition()
+         .call(yAxis);
+
+      country.select("path")
+             .transition()
+             .attr("d", d => d.visible ? line(d.values) : null);
+    };
 }); // End of read csv file.
+
+function findMaxY(data) {
+  var maxYValues = data.map( d => {
+    if (d.visible) {
+      return d3.max(d.values, value => value.rating)
+    }
+  });
+  return d3.max(maxYValues);
+};
+
+function findMinY(data) {
+  var minYValues = data.map( d => {
+    if (d.visible) {
+      return d3.min(d.values, value => value.rating)
+    }
+  });
+  return d3.min(minYValues);
+};
