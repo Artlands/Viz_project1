@@ -297,37 +297,39 @@ d3.csv("data/Data.csv"). then( data => {
 
     //For brusher of the slider bar at the bottom
     function brushended() {
-      if( !d3.event.sourceEvent) return; // Only transition after input;
-      if( !d3.event.selection) return;// Ignore empty selection;
-      var d0 = d3.event.selection.map(xScale2.invert),
-          d1 = d0.map(d3.timeYear.round);
-      console.log(d0);
-
-          // If empty when rounded, use floor & ceil instead.
-      if (d1[0] >= d1[1]) {
-        d1[0] = d3.timeYear.floor(d0[0]);
-        d1[1] = d3.timeYear.offset(d1[0]);
+      if( !d3.event.sourceEvent) {
+        return; // Only transition after input;
+      };
+      if( !d3.event.selection) {
+        xScale.domain(xScale2.domain());
+      }
+      else {
+        var d0 = d3.event.selection.map(xScale2.invert),
+            d1 = d0.map(d3.timeYear.round);
+        // If empty when rounded, use floor & ceil instead.
+        if (d1[0] >= d1[1]) {
+          d1[0] = d3.timeYear.floor(d0[0]);
+          d1[1] = d3.timeYear.offset(d1[0]);
+        }
+        d3.select(this).transition().call(d3.event.target.move, d1.map(xScale2));
+        xScale.domain([d1[0], d1[1]]);
       }
 
-      d3.select(this).transition().call(d3.event.target.move, d1.map(xScale2));
+      svg.select(".x.axis")
+         .transition()
+         .call(xAxis);
 
-      // xScale.domain(brush.empty() ? xScale2.domain() : brush.extent());
-      //
-      // svg.select(".x.axis")
-      //    .transition()
-      //    .call(xAxis);
-      //
-      // maxY = findMaxY(dataset);
-      // minY = findMinY(dataset);
-      // yScale.domain([minY, maxY]);
-      //
-      // svg.select(".y.axis")
-      //    .transition()
-      //    .call(yAxis);
-      //
-      // country.select("path")
-      //        .transition()
-      //        .attr("d", d => d.visible ? line(d.values) : null);
+      maxY = findMaxY(dataset);
+      minY = findMinY(dataset);
+      yScale.domain([minY, maxY]);
+
+      svg.select(".y.axis")
+         .transition()
+         .call(yAxis);
+
+      country.select("path")
+             .transition()
+             .attr("d", d => d.visible ? line(d.values) : null);
     };
 }); // End of read csv file.
 
