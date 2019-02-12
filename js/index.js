@@ -126,7 +126,7 @@ d3.csv("data/Data.csv"). then( data => {
 // -------------For slider part-------------
   var brush = d3.brushX()
                 .extent([[0,0], [width, height2]])
-                .on("brush end", brushended);
+                .on("end", brushended);
 
   // context.append("g")
   //        .attr("class", "axis--grid")
@@ -299,8 +299,9 @@ d3.csv("data/Data.csv"). then( data => {
     function brushended() {
       if( !d3.event.sourceEvent) return; // Only transition after input;
       if( !d3.event.selection) return;// Ignore empty selection;
-      var d0 = d3.event.selection.map(x.invert),
-          d1 = d0.map(d3.timeYear.round)
+      var d0 = d3.event.selection.map(xScale2.invert),
+          d1 = d0.map(d3.timeYear.round);
+      console.log(d0);
 
           // If empty when rounded, use floor & ceil instead.
       if (d1[0] >= d1[1]) {
@@ -308,7 +309,7 @@ d3.csv("data/Data.csv"). then( data => {
         d1[1] = d3.timeYear.offset(d1[0]);
       }
 
-      d3.select(this).transition().call(d3.event.target.move, d1.map(x));
+      d3.select(this).transition().call(d3.event.target.move, d1.map(xScale2));
 
       // xScale.domain(brush.empty() ? xScale2.domain() : brush.extent());
       //
