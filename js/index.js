@@ -18,7 +18,6 @@ var xScale = d3.scaleTime().range([0, width]),
 var xAxis = d3.axisBottom(xScale),
     xAxis2 = d3.axisBottom(xScale2)
                .ticks(d3.timeYear.every(5)),
-               // .tickSize(-height2),
 
     xAxis3 = d3.axisBottom(xScale3)
                .ticks(d3.timeYear, 1)
@@ -30,7 +29,7 @@ var xAxis = d3.axisBottom(xScale),
 
 // Define the line
 var line = d3.line()
-    .x(d => xScale(d.date))
+    .x(d => xScale(d3.timeYear.round(d.date)))
     .y(d => yScale(d.rating))
     .curve(d3.curveLinear)
     .defined(d => !isNaN(d.rating));// Hiding line value for missing data
@@ -53,7 +52,7 @@ svg.append("rect")
    .attr("id", "mouse-tracker")
    .style("fill", "white");
 
-// -------------For slider part-------------
+// --------------------------For slider part--------------------------
 var context = svg.append("g")
                  .attr("class", "context")
                  .attr("transform", "translate(" + 0 + "," + 410 + ")");
@@ -65,7 +64,7 @@ svg.append("defs")
    .append("rect")
    .attr("width", width)
    .attr("height", height);
-// -------------End slider part-------------
+// --------------------------End slider part--------------------------
 
 // 11 Custom colors
 var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#E05A6D", "#E37756", "#E2AA59","#DBC75F", "#7d7c7b"]);
@@ -108,9 +107,6 @@ d3.csv("data/Data.csv"). then( data => {
   var yMin = d3.min(dataset, d => d3.min(d.values, v => v.rating));
       yMax = d3.max(dataset, d => d3.max(d.values, v => v.rating));
 
-  // console.log(yMin);
-  // console.log(yMax);
-
   xScale.domain(d3.extent(dateArr.map(d => {
     year = new Date();
     return year.setFullYear(+d)
@@ -123,17 +119,11 @@ d3.csv("data/Data.csv"). then( data => {
   xScale2.domain(xScale.domain());
   xScale3.domain(xScale.domain());
 
-// -------------For slider part-------------
+// --------------------------For slider part--------------------------
   var brush = d3.brushX()
                 .extent([[0,0], [width, height2]])
+                .on("brush", brushed)
                 .on("end", brushended);
-
-  // context.append("g")
-  //        .attr("class", "axis--grid")
-  //        .attr("transform", "translate(0," + height2 + ")")
-  //        .call(xAxis3)
-  //        .selectAll(".tick")
-  //        .classed("tick--minor", d => d.getFullYear());
 
   // Create brushing xAxis
   context.append("g")
@@ -152,26 +142,7 @@ d3.csv("data/Data.csv"). then( data => {
          .attr("class", "brush")
          .call(brush);
 
-  // var contextArea = d3.area()
-  //                     .x(d => xScale2(d.date))
-  //                     .y0(height2)  // Bottom line begins at height2
-  //                     .y1(0); // Top line of area
-
-  // Plot the rect as the bar at the Bottom
-  // context.append("path")
-  //        .datum(dataset[0].values)
-  //        .attr("class", "area")
-  //        .attr("d", contextArea )
-  //        .attr("fill", "#F1F1F2");
-
-  // Append the brush for the selection of subsection
-  // context.append("g")
-  //        .attr("class", "x brush")
-  //        .call(brush);
-  //        .selectAll("rect")
-  //        .attr("height", height2)
-  //        .attr("fill", "#E6E7E8");
-// -------------End slider part-------------
+// --------------------------End slider part--------------------------
 
   //Draw line graph
   svg.append("g")
@@ -184,8 +155,8 @@ d3.csv("data/Data.csv"). then( data => {
      .call(yAxis)
      .append("text")
      .attr("transform", "rotate(-90)")
-     .attr("y", 6)
-     .attr("x", -10)
+     .attr("y", 0)
+     .attr("x", 0)
      .attr("dy", ".71em")
      .style("text-anchor", "end")
      .text("GDP growth (annual %)");
@@ -296,6 +267,27 @@ d3.csv("data/Data.csv"). then( data => {
     };
 
     //For brusher of the slider bar at the bottom
+    function brushed() {
+      xScale.domain(!d3.event.selection ? xScale2.domain() : d3.event.selection.map(xScale2.invert)); // If brush is empty then reset the Xscale domain to default, if not then make it the brush extent
+
+      svg.select(".x.axis") // replot xAxis with transition when brush used
+            .transition()
+            .call(xAxis);
+
+      maxY = findMaxY(dataset);
+      minY = findMinY(dataset);
+      yScale.domain([minY,maxY]);
+      svg.select(".y.axis") // Redraw yAxis
+        .transition()
+        .call(yAxis);
+
+      country.select("path") // Redraw lines based on brush xAxis scale and domain
+        .transition()
+        .attr("d", function(d){
+            return d.visible ? line(d.values) : null; // If d.visible is true then draw line for this d selection
+        });
+    };
+
     function brushended() {
       if( !d3.event.sourceEvent) {
         return; // Only transition after input;
@@ -336,7 +328,7 @@ d3.csv("data/Data.csv"). then( data => {
 function findMaxY(data) {
   var maxYValues = data.map( d => {
     if (d.visible) {
-      return d3.max(d.values, value => value.rating)
+      return d3.max(d.values, value => value.rating) + 1;
     }
   });
   return d3.max(maxYValues);
@@ -345,7 +337,7 @@ function findMaxY(data) {
 function findMinY(data) {
   var minYValues = data.map( d => {
     if (d.visible) {
-      return d3.min(d.values, value => value.rating)
+      return d3.min(d.values, value => value.rating) - 1;
     }
   });
   return d3.min(minYValues);
