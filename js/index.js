@@ -10,12 +10,21 @@ var margin = {top:20, right:200, bottom: 100, left: 50},
 // Set up scales
 var xScale = d3.scaleTime().range([0, width]),
     xScale2 = d3.scaleTime().range([0, width]),
+    xScale3 = d3.scaleTime().range([0, width]),
+
     yScale = d3.scaleLinear().range([height, 0]);
 
 // Define the axes
 var xAxis = d3.axisBottom(xScale),
     xAxis2 = d3.axisBottom(xScale2)
-               .ticks(10),
+               .ticks(d3.timeYear.every(5)),
+               // .tickSize(-height2),
+
+    xAxis3 = d3.axisBottom(xScale3)
+               .ticks(d3.timeYear, 1)
+               .tickSize(-height2)
+               .tickFormat( () => null ),
+
     yAxis = d3.axisLeft(yScale)
               .tickFormat(d3.format(".2f"));
 
@@ -46,8 +55,8 @@ svg.append("rect")
 
 // -------------For slider part-------------
 var context = svg.append("g")
-                 .attr("transform", "translate(" + 0 + "," + 410 + ")")
-                 .attr("class", "context");
+                 .attr("class", "context")
+                 .attr("transform", "translate(" + 0 + "," + 410 + ")");
 
 // Append clip path for lines plotted, hiding those part out of bounds
 svg.append("defs")
@@ -90,7 +99,7 @@ d3.csv("data/Data.csv"). then( data => {
       visible: (d["Country Name"] === "World" ? true : false)
     };
   });
-  console.log(dataset);
+  // console.log(dataset);
 
 // Match a color to a country
   color.domain(dataset.map(d => d.name));
@@ -109,40 +118,59 @@ d3.csv("data/Data.csv"). then( data => {
 
   // console.log(dateArr);
 
-  // .map(d => parseDate(d))
   yScale.domain([yMin, yMax]);
   // Setting a duplicate xdomain for burshing reference
   xScale2.domain(xScale.domain());
+  xScale3.domain(xScale.domain());
 
 // -------------For slider part-------------
   var brush = d3.brushX()
                 .extent([0,0], [width, height2])
                 .on("end", brushended);
 
+  // context.append("g")
+  //        .attr("class", "axis--grid")
+  //        .attr("transform", "translate(0," + height2 + ")")
+  //        .call(xAxis3)
+  //        .selectAll(".tick")
+  //        .classed("tick--minor", d => d.getFullYear());
+
+  // Create brushing xAxis
   context.append("g")
-         .attr("class", "x axis1")
+         .attr("class", "axis axis--grid")
+         .attr("transform", "translate(0," + height2 + ")")
+         .call(xAxis3)
+         .selectAll(".tick")
+         .classed("tick--minor", d => d.getFullYear());
+
+  context.append("g")
+         .attr("class", "axis axis--x")
          .attr("transform", "translate(0," + height2 + ")")
          .call(xAxis2);
 
-  var contextArea = d3.area()
-                      .curve(d3.curveMonotoneX)
-                      .x( d => xScale(d.date))
-                      .y0(height2)  // Bottom line begins at height2
-                      .y1(0); // Top line of area
+  context.append("g")
+         .attr("class", "brush")
+         .call(brush);
+
+  // var contextArea = d3.area()
+  //                     .x(d => xScale2(d.date))
+  //                     .y0(height2)  // Bottom line begins at height2
+  //                     .y1(0); // Top line of area
 
   // Plot the rect as the bar at the Bottom
-  context.append("path")
-         .attr("class", "area")
-         .attr("d", contextArea(dataset[0].values))
-         .attr("fill", "#F1F1F2");
+  // context.append("path")
+  //        .datum(dataset[0].values)
+  //        .attr("class", "area")
+  //        .attr("d", contextArea )
+  //        .attr("fill", "#F1F1F2");
 
   // Append the brush for the selection of subsection
-  context.append("g")
-         .attr("class", "x brush")
-         .call(brush)
-         .selectAll("rect")
-         .attr("height", height2)
-         .attr("fill", "#E6E7E8");
+  // context.append("g")
+  //        .attr("class", "x brush")
+  //        .call(brush);
+  //        .selectAll("rect")
+  //        .attr("height", height2)
+  //        .attr("fill", "#E6E7E8");
 // -------------End slider part-------------
 
   //Draw line graph
@@ -269,29 +297,36 @@ d3.csv("data/Data.csv"). then( data => {
 
     //For brusher of the slider bar at the bottom
     function brushended() {
-      // if( !d3.event.sourceEvent) return; // Only transition after input;
-      // if( !d3.event.selection) return;// Ignore empty selection;
-      // var d0 = d3.event.selection.map(x.invert),
-      //     d1 = d0.map(d3.timeYear.round)
+      if( !d3.event.sourceEvent) return; // Only transition after input;
+      if( !d3.event.selection) return;// Ignore empty selection;
+      var d0 = d3.event.selection.map(x.invert),
+          d1 = d0.map(d3.timeYear.round)
 
+          // If empty when rounded, use floor & ceil instead.
+      if (d1[0] >= d1[1]) {
+        d1[0] = d3.timeYear.floor(d0[0]);
+        d1[1] = d3.timeYear.offset(d1[0]);
+      }
 
-      xScale.domain(brush.empty() ? xScale2.domain() : brush.extent());
+      d3.select(this).transition().call(d3.event.target.move, d1.map(x));
 
-      svg.select(".x.axis")
-         .transition()
-         .call(xAxis);
-
-      maxY = findMaxY(dataset);
-      minY = findMinY(dataset);
-      yScale.domain([minY, maxY]);
-
-      svg.select(".y.axis")
-         .transition()
-         .call(yAxis);
-
-      country.select("path")
-             .transition()
-             .attr("d", d => d.visible ? line(d.values) : null);
+      // xScale.domain(brush.empty() ? xScale2.domain() : brush.extent());
+      //
+      // svg.select(".x.axis")
+      //    .transition()
+      //    .call(xAxis);
+      //
+      // maxY = findMaxY(dataset);
+      // minY = findMinY(dataset);
+      // yScale.domain([minY, maxY]);
+      //
+      // svg.select(".y.axis")
+      //    .transition()
+      //    .call(yAxis);
+      //
+      // country.select("path")
+      //        .transition()
+      //        .attr("d", d => d.visible ? line(d.values) : null);
     };
 }); // End of read csv file.
 

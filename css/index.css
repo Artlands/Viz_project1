@@ -2,10 +2,13 @@ body {
   font: 10px sans-serif;
 }
 
+.line {
+  fill: none;
+  stroke-width: 1.5px;
+}
+
 .axis path,
-.axis line,
-.axis1 path,
-.axis1 line {
+.axis line {
   fill: none;
   stroke: #E6E7E8;
   shape-rendering: crispEdges;
@@ -15,10 +18,21 @@ body {
   display: none;
 }
 
-.line {
-  fill: none;
-  stroke-width: 1.5px;
+.axis--grid .domain {
+  fill: #ddd;
+  stroke: none;
 }
+
+.axis--x .domain,
+.axis--grid .tick line {
+  stroke: #fff;
+}
+
+.axis--grid .tick--minor line {
+  stroke-opacity: .5;
+}
+
+
 
 .legend-box {
   cursor: pointer;
