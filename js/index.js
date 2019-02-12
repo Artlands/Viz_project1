@@ -125,8 +125,8 @@ d3.csv("data/Data.csv"). then( data => {
 
 // -------------For slider part-------------
   var brush = d3.brushX()
-                .extent([0,0], [width, height2])
-                .on("end", brushended);
+                .extent([[0,0], [width, height2]])
+                .on("brush end", brushended);
 
   // context.append("g")
   //        .attr("class", "axis--grid")
