@@ -206,10 +206,9 @@ d3.csv("data/Data.csv"). then( data => {
                   .transition()
                   .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
          })
-         .on("mouseover", d => {
-           console.log(d.name);
-           console.log(color(d.name));
-
+         .on("mouseover", function(d) {
+           // console.log(d.name);
+           // console.log(color(d.name));
            d3.select(this)
              .transition()
              .attr("fill", d =>color(d.name));
@@ -217,7 +216,7 @@ d3.csv("data/Data.csv"). then( data => {
              .transition()
              .style("stroke-width", 1.5);
          })
-         .on("mouseout", d => {
+         .on("mouseout", function(d) {
            d3.select(this)
              .transition()
              .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
