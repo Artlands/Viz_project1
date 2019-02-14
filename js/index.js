@@ -100,7 +100,7 @@ d3.csv("data/Data.csv"). then( data => {
       visible: (d["Country Name"] === "World" ? true : false)
     };
   });
-  // console.log(dataset);
+  console.log(dataset);
 
 // Match a color to a country
   color.domain(dataset.map(d => d.name));
@@ -187,7 +187,7 @@ d3.csv("data/Data.csv"). then( data => {
          .attr("height", 10)
          .attr("x", width + (margin.right/3) - 25)
          .attr("y", (d, i) => (i + 1/2)* legendSpace - 8 )
-         .attr("fill", d => d.visible? color(d.name) : "#F1F1F2")
+         .attr("fill", d => d.visible? color(d.name) : "#e6e6e6")
          .attr("class", "legend-box")
          .on("click", d => {
            d.visible = ! d.visible;
@@ -204,12 +204,15 @@ d3.csv("data/Data.csv"). then( data => {
 
            country.select("rect")
                   .transition()
-                  .attr("fill", d => d.visible? color(d.name) : "#F1F1F2");
+                  .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
          })
          .on("mouseover", d => {
+           console.log(d.name);
+           console.log(color(d.name));
+
            d3.select(this)
              .transition()
-             .attr("fill", d => color(d.name));
+             .attr("fill", d =>color(d.name));
            d3.select("#line-" + d.name.replace(" ",""))
              .transition()
              .style("stroke-width", 1.5);
@@ -217,7 +220,7 @@ d3.csv("data/Data.csv"). then( data => {
          .on("mouseout", d => {
            d3.select(this)
              .transition()
-             .attr("fill", d => d.visible? color(d.name) : "#F1F1F2");
+             .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
            d3.select("#line-" + d.name.replace(" ",""))
              .transition()
              .style("stroke-width", 0.5);
