@@ -7,6 +7,9 @@ var margin = {top:20, right:200, bottom: 100, left: 50},
     height = 500 - margin.top - margin.bottom,
     height2 = 500 - margin2.top - margin2.bottom;
 
+var parseTime = d3.timeParse("%Y"),
+    bisectDate = d3.bisector( d => d.year).left;
+
 // Set up scales
 var xScale = d3.scaleTime().range([0, width]),
     xScale2 = d3.scaleTime().range([0, width]),
@@ -91,9 +94,8 @@ d3.csv("data/Data.csv"). then( data => {
     return {
       name: d["Country Name"],
       values:dateArr.map( i => {
-        year = new Date();
         return {
-          date: d3.timeYear.round(year.setFullYear(+i)),
+          date: parseTime(i),
           rating: +d[i]
         };
       }),
@@ -109,10 +111,7 @@ d3.csv("data/Data.csv"). then( data => {
   var yMin = d3.min(dataset, d => d3.min(d.values, v => v.rating));
       yMax = d3.max(dataset, d => d3.max(d.values, v => v.rating));
 
-  xScale.domain(d3.extent(dateArr.map(d => {
-    year = new Date();
-    return d3.timeYear.round(year.setFullYear(+d));
-  })));
+  xScale.domain(d3.extent(dateArr.map(d => parseTime(d))));
 
   // console.log(dateArr);
 
@@ -133,7 +132,7 @@ d3.csv("data/Data.csv"). then( data => {
          .attr("transform", "translate(0," + height2 + ")")
          .call(xAxis3)
          .selectAll(".tick")
-         .classed("tick--minor", d => d.getFullYear());
+         .classed("tick--minor", d => d);
 
   context.append("g")
          .attr("class", "axis axis--x")
@@ -231,46 +230,46 @@ d3.csv("data/Data.csv"). then( data => {
            .text(d => d.name);
 
     //Hover line
-    var hoverLineGroup = svg.append("g").attr("class", "hover-line");
-
-    var hoverLine = hoverLineGroup.append("line")
-                                  .attr("id", "hover-line")
-                                  .attr("x1", 10).attr("x2", 10)
-                                  .attr("y1", 0).attr("y2", height + 10)
-                                  .style("pointer-events", "none")
-                                  .style("opacity", 1e-6); // Set opacity to zero
-
-    var hoverDate = hoverLineGroup.append("text")
-                                  .attr("class", "hover-text")
-                                  .attr("y", height - (height - 40))
-                                  .attr("x", width - 150)
-                                  .style("fill", "#E6E7E8");
-
-    var columnNames = countries.concat(world);
-
-    var focus = country.select("g")
-                       .data(columnNames)
-                       .enter()
-                       .append("g")
-                       .attr("class", "focus");
-
-    focus.append("text")
-         .attr("class", "tooltip")
-         .attr("x", width + 20)
-         .attr("y", (d, i) => legendSpace + i * legendSpace);
+    // var hoverLineGroup = svg.append("g").attr("class", "hover-line");
+    //
+    // var hoverLine = hoverLineGroup.append("line")
+    //                               .attr("id", "hover-line")
+    //                               .attr("x1", 10).attr("x2", 10)
+    //                               .attr("y1", 0).attr("y2", height + 10)
+    //                               .style("pointer-events", "none")
+    //                               .style("opacity", 1e-6); // Set opacity to zero
+    //
+    // var hoverDate = hoverLineGroup.append("text")
+    //                               .attr("class", "hover-text")
+    //                               .attr("y", height - (height - 40))
+    //                               .attr("x", width - 150)
+    //                               .style("fill", "#E6E7E8");
+    //
+    // var columnNames = countries.concat(world);
+    //
+    // var focus = country.select("g")
+    //                    .data(columnNames)
+    //                    .enter()
+    //                    .append("g")
+    //                    .attr("class", "focus");
+    //
+    // focus.append("text")
+    //      .attr("class", "tooltip")
+    //      .attr("x", width + 20)
+    //      .attr("y", (d, i) => legendSpace + i * legendSpace);
 
     //Add mouseover events for hover lines
-    d3.select("#mouse-tracker")
-      .on("mousemove", mousemove)
-      .on("mouseout", () => {
-        hoverDate.text(null);
-        d3.select("#hover-line")
-          .style("opacity", 1e-6);
-      });
-
-    function mousemove() {
-      // To be done
-    };
+    // d3.select("#mouse-tracker")
+    //   .on("mousemove", mousemove)
+    //   .on("mouseout", function() {
+    //     hoverDate.text(null);
+    //     d3.select("#hover-line")
+    //       .style("opacity", 1e-6);
+    //   });
+    //
+    // function mousemove() {
+    //   // To be done
+    // };
 
     //For brusher of the slider bar at the bottom
     function brushed() {
