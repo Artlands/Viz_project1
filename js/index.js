@@ -15,21 +15,23 @@ var xScale = d3.scaleTime().range([0, width]),
     yScale = d3.scaleLinear().range([height, 0]);
 
 // Define the axes
-var xAxis = d3.axisBottom(xScale),
+var xAxis = d3.axisBottom(xScale)
+              .tickSize(-height),
     xAxis2 = d3.axisBottom(xScale2)
                .ticks(d3.timeYear.every(5)),
 
     xAxis3 = d3.axisBottom(xScale3)
-               .ticks(d3.timeYear, 1)
+               .ticks(d3.timeYear.every(1))
                .tickSize(-height2)
                .tickFormat( () => null ),
 
     yAxis = d3.axisLeft(yScale)
+              .tickSize(-width)
               .tickFormat(d3.format(".2f"));
 
 // Define the line
 var line = d3.line()
-    .x(d => xScale(d3.timeYear.round(d.date)))
+    .x(d => xScale(d.date))
     .y(d => yScale(d.rating))
     .curve(d3.curveLinear)
     .defined(d => !isNaN(d.rating));// Hiding line value for missing data
@@ -50,7 +52,7 @@ svg.append("rect")
    .attr("x", 0)
    .attr("y", 0)
    .attr("id", "mouse-tracker")
-   .style("fill", "white");
+   .style("fill", "none");
 
 // --------------------------For slider part--------------------------
 var context = svg.append("g")
@@ -91,7 +93,7 @@ d3.csv("data/Data.csv"). then( data => {
       values:dateArr.map( i => {
         year = new Date();
         return {
-          date: year.setFullYear(+i),
+          date: d3.timeYear.round(year.setFullYear(+i)),
           rating: +d[i]
         };
       }),
@@ -109,7 +111,7 @@ d3.csv("data/Data.csv"). then( data => {
 
   xScale.domain(d3.extent(dateArr.map(d => {
     year = new Date();
-    return year.setFullYear(+d)
+    return d3.timeYear.round(year.setFullYear(+d));
   })));
 
   // console.log(dateArr);
@@ -152,12 +154,14 @@ d3.csv("data/Data.csv"). then( data => {
 
   svg.append("g")
      .attr("class", "y axis")
-     .call(yAxis)
+     .call(yAxis);
+
+ svg.append("g")
      .append("text")
      .attr("transform", "rotate(-90)")
-     .attr("y", 0)
-     .attr("x", 0)
-     .attr("dy", ".71em")
+     .attr("y", 4)
+     .attr("x", -8)
+     .attr("dy", "0.7em")
      .style("text-anchor", "end")
      .text("GDP growth (annual %)");
 

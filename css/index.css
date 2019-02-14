@@ -10,8 +10,14 @@ body {
 .axis path,
 .axis line {
   fill: none;
-  stroke: #E6E7E8;
+  stroke: #bfbfbf;
   shape-rendering: crispEdges;
+}
+
+.axis .tick line {
+  stroke: #bfbfbf;
+	stroke-dasharray: 1.5;
+	stroke-opacity: .5;
 }
 
 .x.axis path, .x.axis1 path {
@@ -19,32 +25,40 @@ body {
 }
 
 .axis--grid .domain {
-  fill: #ddd;
+  fill: #bfbfbf;
+  opacity: 0.75;
   stroke: none;
 }
 
 .axis--x .domain,
 .axis--grid .tick line {
   stroke: #fff;
+  stroke-dasharray: 0;
+  stroke-width: 1px;
+}
+
+.axis--x .tick line {
+  stroke: #bfbfbf;
+	stroke-dasharray: 0;
+  stroke-opacity: 1;
 }
 
 .axis--grid .tick--minor line {
   stroke-opacity: .5;
+  stroke-width: 0.5px;
 }
-
-
 
 .legend-box {
   cursor: pointer;
 }
 
 #mouse-tracker {
-  stroke: #E6E7E8;
+  stroke: #bfbfbf;
   stroke-width: 1px;
 }
 
 .hover-line {
-  stroke: #E6E7E8;
+  stroke: #bfbfbf;
   fill: none;
   stroke-width: 1px;
   left: 10px;
