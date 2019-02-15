@@ -84,7 +84,7 @@ d3.csv("data/Data.csv"). then( data => {
                       y = b["Country Name"];
                   return (x < y)? -1 : 1;
                 });
-  var world = data.filter(d => d["Country Name"] == "World");
+  var world = data.filter(d => d["Country Name"] === "World");
   var dataset = countries.concat(world);
   var dateArr;
 
@@ -99,7 +99,7 @@ d3.csv("data/Data.csv"). then( data => {
           rating: +d[i]
         };
       }),
-      visible: (d["Country Name"] === "World" ? true : false)
+      visible: (d["Country Name"] === "World" )
     };
   });
   console.log(dataset);
@@ -164,7 +164,7 @@ d3.csv("data/Data.csv"). then( data => {
      .style("text-anchor", "end")
      .text("GDP growth (annual %)");
 
- // Bind the data
+ // Draw Line
   var lines = svg.selectAll(".line-group")
       .data(dataset)
       .enter()
@@ -188,6 +188,49 @@ d3.csv("data/Data.csv"). then( data => {
           d3.select(this).style("stroke-width", "1.5px");
           d3.selectAll(".legend").style("opacity", 1);
        });
+
+ // Draw circle in the line
+ //  var circles = svg.selectAll(".circle-group")
+ //      .data(dataset)
+ //      .enter()
+ //      .append("g")
+ //      .style("fill", d => color(d.name))
+ //      .selectAll("circle")
+ //      .data(d => d.values).enter()
+ //      .append("g")
+ //      .attr("class", "circle")
+ //      .on("mouseover", function(d){
+ //         d3.select(this)
+ //             .style("cursor", "pointer")
+ //             .append("text")
+ //             .attr("class", "text")
+ //             .text(d.rating)
+ //             .attr("x", d => xScale(d.date) + 5)
+ //             .attr("y", d => yScale(d.rating) - 10);
+ //      })
+ //      .on("mouseout", function(d) {
+ //          d3.select(this)
+ //              .style("cursor", "none")
+ //              .transition()
+ //              .duration(200)
+ //              .selectAll(".text").remove();
+ //      })
+ //      .append("circle")
+ //      .attr("cx", d => xScale(d.date))
+ //      .attr("cy", d => yScale(d.rating))
+ //      .attr("r", 4)
+ //      .on("mouseover", function(d) {
+ //          d3.select(this)
+ //              .transition()
+ //              .duration(200)
+ //              .attr("r", 6);
+ //      })
+ //      .on("mouseout", function(d) {
+ //          d3.select(this)
+ //              .transition()
+ //              .duration(200)
+ //              .attr("r", 4);
+ //      });
 
   // Draw legend
   var legendSpace = height/dataset.length;
