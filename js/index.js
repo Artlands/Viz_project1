@@ -178,6 +178,7 @@ d3.csv("data/Data.csv"). then( data => {
       .attr("d", d => d.visible? line(d.values) : null)
       .style("stroke", d => color(d.name))
       .on("mouseover", function(d) {
+          // focus.style("display", null).style("fill", color(d.name));
           d3.selectAll('.line').style("opacity", 0.2);
           d3.select(this).style("opacity", 1).style("stroke-width", "2.5px");
           d3.selectAll(".legend").style("opacity", 0.2);
@@ -188,6 +189,16 @@ d3.csv("data/Data.csv"). then( data => {
           d3.select(this).style("stroke-width", "1.5px");
           d3.selectAll(".legend").style("opacity", 1);
        });
+
+  // var focus = svg.append("g")
+  //     .attr("class", "focus")
+  //     .style("display", "none");
+  //
+  // focus.append("circle")
+  //     .attr("r", 4);
+  // focus.append("text")
+  //     .attr("x", 9)
+  //     .attr("dy", ".35em");
 
  // Draw circle in the line
  //  var circles = svg.selectAll(".circle-group")
