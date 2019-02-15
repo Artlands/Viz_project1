@@ -164,54 +164,69 @@ d3.csv("data/Data.csv"). then( data => {
      .style("text-anchor", "end")
      .text("GDP growth (annual %)");
 
-  var country = svg.selectAll(".country")
-                 .data(dataset)
-                 .enter()
-                 .append("g")
-                 .attr("class", "country");
+ // Bind the data
+  var lines = svg.selectAll(".line-group")
+      .data(dataset)
+      .enter()
+      .append("g")
+      .attr("clip-path", "url(#clip)")
+      .attr("class", "line-group")
+      .attr("id", d => "line-" + d.name.replace(" ", ""));
 
-  country.append("path")
-         .attr("class", "line")
-         .style("pointer-events", "none")
-         .attr("id", d => "line-" + d.name.replace(" ", ""))
-         .attr("d", d => d.visible? line(d.values) : null)
-         .attr("clip-path", "url(#clip)")
-         .style("stroke", d => color(d.name));
+    lines.append("path")
+      .attr("class", "line")
+      .attr("d", d => d.visible? line(d.values) : null)
+      .style("stroke", d => color(d.name))
+      .on("mouseover", function(d) {
+          d3.selectAll('.line').style("opacity", 0.2);
+          d3.select(this).style("opacity", 1).style("stroke-width", "2.5px");
+          d3.selectAll(".legend").style("opacity", 0.2);
+          d3.select("#leg-" + d.name.replace(" ","")).style("opacity", 1);
+       })
+      .on("mouseout", function(d) {
+          d3.selectAll('.line').style("opacity", 1);
+          d3.select(this).style("stroke-width", "1.5px");
+          d3.selectAll(".legend").style("opacity", 1);
+       });
 
   // Draw legend
   var legendSpace = height/dataset.length;
+  var legend = svg.selectAll('.legend')
+      .data(dataset)
+      .enter()
+      .append("g")
+      .attr("class", "legend")
+      .attr("id", d => "leg-" + d.name.replace(" ", ""));
 
-  country.append("rect")
-         .attr("width", 10)
-         .attr("height", 10)
-         .attr("x", width + (margin.right/3) - 25)
-         .attr("y", (d, i) => (i + 1/2)* legendSpace - 8 )
-         .attr("fill", d => d.visible? color(d.name) : "#e6e6e6")
-         .attr("class", "legend-box")
-         .on("click", d => {
-           d.visible = ! d.visible;
-           maxY = findMaxY(dataset);
-           minY = findMinY(dataset);
-           yScale.domain([minY, maxY]);
-           svg.select(".y.axis")
+  legend.append("rect")
+      .attr("width", 10)
+      .attr("height", 10)
+      .attr("x", width + (margin.right/3) - 25)
+      .attr("y", (d, i) => (i + 1/2)* legendSpace - 8 )
+      .attr("fill", d => d.visible? color(d.name) : "#e6e6e6")
+      .attr("class", "legend-box")
+      .on("click", d => {
+          d.visible = ! d.visible;
+          maxY = findMaxY(dataset);
+          minY = findMinY(dataset);
+          yScale.domain([minY, maxY]);
+          svg.select(".y.axis")
               .transition()
               .call(yAxis);
 
-           country.select("path")
-                  .transition()
-                  .attr("d", d=> d.visible? line(d.values) : null);
+          lines.select("path")
+              .transition()
+              .attr("d", d=> d.visible? line(d.values) : null);
 
-           country.select("rect")
-                  .transition()
-                  .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
+          legend.select("rect")
+              .transition()
+              .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
          })
-         .on("mouseover", function(d) {
-           // console.log(d.name);
-           // console.log(color(d.name));
-           d3.select(this)
-             .transition()
+      .on("mouseover", function(d) {
+          d3.select(this)
+              .transition()
              .attr("fill", d =>color(d.name));
-           d3.select("#line-" + d.name.replace(" ",""))
+          d3.select("#line-" + d.name.replace(" ",""))
              .transition()
              .style("stroke-width", 1.5);
          })
@@ -224,52 +239,10 @@ d3.csv("data/Data.csv"). then( data => {
              .style("stroke-width", 0.5);
          });
 
-    country.append("text")
+    legend.append("text")
            .attr("x", width + (margin.right/3) - 10)
            .attr("y", (d, i) => (i + 1/2) * legendSpace)
            .text(d => d.name);
-
-    //Hover line
-    // var hoverLineGroup = svg.append("g").attr("class", "hover-line");
-    //
-    // var hoverLine = hoverLineGroup.append("line")
-    //                               .attr("id", "hover-line")
-    //                               .attr("x1", 10).attr("x2", 10)
-    //                               .attr("y1", 0).attr("y2", height + 10)
-    //                               .style("pointer-events", "none")
-    //                               .style("opacity", 1e-6); // Set opacity to zero
-    //
-    // var hoverDate = hoverLineGroup.append("text")
-    //                               .attr("class", "hover-text")
-    //                               .attr("y", height - (height - 40))
-    //                               .attr("x", width - 150)
-    //                               .style("fill", "#E6E7E8");
-    //
-    // var columnNames = countries.concat(world);
-    //
-    // var focus = country.select("g")
-    //                    .data(columnNames)
-    //                    .enter()
-    //                    .append("g")
-    //                    .attr("class", "focus");
-    //
-    // focus.append("text")
-    //      .attr("class", "tooltip")
-    //      .attr("x", width + 20)
-    //      .attr("y", (d, i) => legendSpace + i * legendSpace);
-
-    //Add mouseover events for hover lines
-    // d3.select("#mouse-tracker")
-    //   .on("mousemove", mousemove)
-    //   .on("mouseout", function() {
-    //     hoverDate.text(null);
-    //     d3.select("#hover-line")
-    //       .style("opacity", 1e-6);
-    //   });
-    //
-    // function mousemove() {
-    //   // To be done
-    // };
 
     //For brusher of the slider bar at the bottom
     function brushed() {
@@ -286,7 +259,7 @@ d3.csv("data/Data.csv"). then( data => {
         .transition()
         .call(yAxis);
 
-      country.select("path") // Redraw lines based on brush xAxis scale and domain
+        lines.select("path") // Redraw lines based on brush xAxis scale and domain
         .transition()
         .attr("d", function(d){
             return d.visible ? line(d.values) : null; // If d.visible is true then draw line for this d selection
@@ -324,7 +297,7 @@ d3.csv("data/Data.csv"). then( data => {
          .transition()
          .call(yAxis);
 
-      country.select("path")
+        lines.select("path")
              .transition()
              .attr("d", d => d.visible ? line(d.values) : null);
     };
