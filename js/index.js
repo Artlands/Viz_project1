@@ -8,7 +8,7 @@ var margin = {top:20, right:200, bottom: 100, left: 50},
     height2 = 500 - margin2.top - margin2.bottom;
 
 var parseTime = d3.timeParse("%Y"),
-    bisectDate = d3.bisector( d => d.year).left;
+    bisectDate = d3.bisector( d => d.date).left;
 
 // Set up scales
 var xScale = d3.scaleTime().range([0, width]),
@@ -39,7 +39,7 @@ var line = d3.line()
     .curve(d3.curveLinear)
     .defined(d => !isNaN(d.rating));// Hiding line value for missing data
 
-// Define updated yAxis
+// Store the Max and Min value of rating.
 var maxY, minY;
 
 var svg = d3.select("body").append("svg")
@@ -102,7 +102,7 @@ d3.csv("data/Data.csv"). then( data => {
       visible: (d["Country Name"] === "World" )
     };
   });
-  console.log(dataset);
+  // console.log(dataset);
 
 // Match a color to a country
   color.domain(dataset.map(d => d.name));
@@ -164,6 +164,21 @@ d3.csv("data/Data.csv"). then( data => {
      .style("text-anchor", "end")
      .text("GDP growth (annual %)");
 
+ // Draw focus
+  var focus = svg.append("g")
+        .attr("class", "circle")
+        .style("display", "none")
+        .attr("pointer-events", "none");
+
+  focus.append("circle")
+        .attr("r", 5);
+
+ // create a tooltip
+  var Tooltip = d3.select("body")
+      .append("div")
+      .style("opacity", 0)
+      .attr("class", "tooltip")
+
  // Draw Line
   var lines = svg.selectAll(".line-group")
       .data(dataset)
@@ -178,70 +193,38 @@ d3.csv("data/Data.csv"). then( data => {
       .attr("d", d => d.visible? line(d.values) : null)
       .style("stroke", d => color(d.name))
       .on("mouseover", function(d) {
-          // focus.style("display", null).style("fill", color(d.name));
+
           d3.selectAll('.line').style("opacity", 0.2);
           d3.select(this).style("opacity", 1).style("stroke-width", "2.5px");
           d3.selectAll(".legend").style("opacity", 0.2);
           d3.select("#leg-" + d.name.replace(" ","")).style("opacity", 1);
+
+          // Show circle
+          focus.style("display", null);
+          focus.selectAll("circle")
+              .attr("fill", color(d.name));
+
+          var x0 = xScale.invert(d3.mouse(this)[0]),
+              x1 = d3.timeYear.round(x0),
+              i = bisectDate(d.values, x1);
+
+          focus.attr("transform", "translate(" + xScale(x1) + "," + yScale(d.values[i].rating) + ")");
+          // Show tooltip
+          Tooltip.style("opacity", 1)
+              .html( "<strong>" + d.name + "</strong>"  + "<br>" + " GDP Growth in " + "<strong>" + d.values[i].date.getFullYear()
+                  + "</strong> :" + "<br>" + "<strong>" + d.values[i].rating.toFixed(2) + "%" + "</strong>" )
+              .style("left", (d3.mouse(this)[0]+70) + "px")
+              .style("top", (d3.mouse(this)[1]) + "px");
+
        })
       .on("mouseout", function(d) {
           d3.selectAll('.line').style("opacity", 1);
           d3.select(this).style("stroke-width", "1.5px");
           d3.selectAll(".legend").style("opacity", 1);
+          focus.style("display", "none");
+          Tooltip
+              .style("opacity", 0)
        });
-
-  // var focus = svg.append("g")
-  //     .attr("class", "focus")
-  //     .style("display", "none");
-  //
-  // focus.append("circle")
-  //     .attr("r", 4);
-  // focus.append("text")
-  //     .attr("x", 9)
-  //     .attr("dy", ".35em");
-
- // Draw circle in the line
- //  var circles = svg.selectAll(".circle-group")
- //      .data(dataset)
- //      .enter()
- //      .append("g")
- //      .style("fill", d => color(d.name))
- //      .selectAll("circle")
- //      .data(d => d.values).enter()
- //      .append("g")
- //      .attr("class", "circle")
- //      .on("mouseover", function(d){
- //         d3.select(this)
- //             .style("cursor", "pointer")
- //             .append("text")
- //             .attr("class", "text")
- //             .text(d.rating)
- //             .attr("x", d => xScale(d.date) + 5)
- //             .attr("y", d => yScale(d.rating) - 10);
- //      })
- //      .on("mouseout", function(d) {
- //          d3.select(this)
- //              .style("cursor", "none")
- //              .transition()
- //              .duration(200)
- //              .selectAll(".text").remove();
- //      })
- //      .append("circle")
- //      .attr("cx", d => xScale(d.date))
- //      .attr("cy", d => yScale(d.rating))
- //      .attr("r", 4)
- //      .on("mouseover", function(d) {
- //          d3.select(this)
- //              .transition()
- //              .duration(200)
- //              .attr("r", 6);
- //      })
- //      .on("mouseout", function(d) {
- //          d3.select(this)
- //              .transition()
- //              .duration(200)
- //              .attr("r", 4);
- //      });
 
   // Draw legend
   var legendSpace = height/dataset.length;
@@ -301,23 +284,7 @@ d3.csv("data/Data.csv"). then( data => {
     //For brusher of the slider bar at the bottom
     function brushed() {
       xScale.domain(!d3.event.selection ? xScale2.domain() : d3.event.selection.map(xScale2.invert)); // If brush is empty then reset the Xscale domain to default, if not then make it the brush extent
-
-      svg.select(".x.axis") // replot xAxis with transition when brush used
-            .transition()
-            .call(xAxis);
-
-      maxY = findMaxY(dataset);
-      minY = findMinY(dataset);
-      yScale.domain([minY,maxY]);
-      svg.select(".y.axis") // Redraw yAxis
-        .transition()
-        .call(yAxis);
-
-        lines.select("path") // Redraw lines based on brush xAxis scale and domain
-        .transition()
-        .attr("d", function(d){
-            return d.visible ? line(d.values) : null; // If d.visible is true then draw line for this d selection
-        });
+      redraw();
     };
 
     function brushended() {
@@ -338,22 +305,26 @@ d3.csv("data/Data.csv"). then( data => {
         d3.select(this).transition().call(d3.event.target.move, d1.map(xScale2));
         xScale.domain([d1[0], d1[1]]);
       }
+      redraw();
+    };
 
-      svg.select(".x.axis")
-         .transition()
-         .call(xAxis);
+    function redraw() {
+        svg.select(".x.axis")
+            .transition()
+            .call(xAxis);
 
-      maxY = findMaxY(dataset);
-      minY = findMinY(dataset);
-      yScale.domain([minY, maxY]);
+        maxY = findMaxY(dataset);
+        minY = findMinY(dataset);
+        yScale.domain([minY, maxY]);
 
-      svg.select(".y.axis")
-         .transition()
-         .call(yAxis);
+        svg.select(".y.axis")
+            .transition()
+            .call(yAxis);
 
         lines.select("path")
-             .transition()
-             .attr("d", d => d.visible ? line(d.values) : null);
+            .transition()
+            .attr("d", d => d.visible ? line(d.values) : null);
+
     };
 }); // End of read csv file.
 
@@ -374,3 +345,5 @@ function findMinY(data) {
   });
   return d3.min(minYValues);
 };
+
+
