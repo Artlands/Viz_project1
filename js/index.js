@@ -87,7 +87,7 @@ svg.append("defs")
 // --------------------------End slider part--------------------------
 
 // 11 Custom colors
-var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#E05A6D", "#E37756", "#E2AA59","#DBC75F", "#7d7c7b"]);
+var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#d41c00", "#E37756", "#E2AA59","#e3e335", "#7d7c7b"]);
 
 // Read data from csv file and preprocess it
 d3.csv("data/Data.csv"). then( data => {
