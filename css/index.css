@@ -48,6 +48,13 @@ body {
   stroke-width: 0.5px;
 }
 
+.area.above {
+    fill: #fc8d59;
+}
+.area.below {
+    fill: #91bfdb;
+}
+
 .legend-box {
   cursor: pointer;
 }

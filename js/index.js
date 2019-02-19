@@ -39,8 +39,24 @@ var line = d3.line()
     .curve(d3.curveLinear)
     .defined(d => !isNaN(d.rating));// Hiding line value for missing data
 
+// Define the area
+var valueArea = d3.area()
+    .x(d => xScale(d.date))
+    .y1(d => yScale(d.rating))
+    .curve(d3.curveLinear),
+    zeroArea = d3.area()
+    .x(d => xScale(d.date))
+    .y0(y(0))
+    .y1(y(0))
+    .curve(d3.curveLinear);
+
+
 // Store the Max and Min value of rating.
 var maxY, minY;
+
+// Comparison Flag
+var comparision = false,
+    dataSelect = new Set();
 
 var svg = d3.select("body").append("svg")
             .attr("width", width + margin.left + margin.right)
@@ -103,6 +119,9 @@ d3.csv("data/Data.csv"). then( data => {
     };
   });
   // console.log(dataset);
+
+  // Add visible item index to dataSelect
+    dataSelect.add(10);
 
 // Match a color to a country
   color.domain(dataset.map(d => d.name));
@@ -209,6 +228,7 @@ d3.csv("data/Data.csv"). then( data => {
               i = bisectDate(d.values, x1);
 
           focus.attr("transform", "translate(" + xScale(x1) + "," + yScale(d.values[i].rating) + ")");
+
           // Show tooltip
           Tooltip.style("opacity", 1)
               .html( "<strong>" + d.name + "</strong>"  + "<br>" + " GDP Growth in " + "<strong>" + d.values[i].date.getFullYear()
@@ -222,12 +242,13 @@ d3.csv("data/Data.csv"). then( data => {
           d3.select(this).style("stroke-width", "1.5px");
           d3.selectAll(".legend").style("opacity", 1);
           focus.style("display", "none");
+          // Hide tooltip
           Tooltip
               .style("opacity", 0)
        });
 
   // Draw legend
-  var legendSpace = height/dataset.length;
+  var legendSpace = height/(dataset.length + 1);
   var legend = svg.selectAll('.legend')
       .data(dataset)
       .enter()
@@ -239,11 +260,25 @@ d3.csv("data/Data.csv"). then( data => {
       .attr("width", 10)
       .attr("height", 10)
       .attr("x", width + (margin.right/3) - 25)
-      .attr("y", (d, i) => (i + 1/2)* legendSpace - 8 )
+      .attr("y", (d, i) => (i + 1/2) * legendSpace - 4)
       .attr("fill", d => d.visible? color(d.name) : "#e6e6e6")
       .attr("class", "legend-box")
-      .on("click", d => {
+      .on("click", (d, i) => {
           d.visible = ! d.visible;
+
+          if (d.visible) {
+              dataSelect.add(i)
+          }
+          else {
+              dataSelect.delete(i)
+          }
+
+          // console.log(dataSelect.size);
+
+          if(dataSelect.size === 2 && comparision) {
+              drawComp();
+          }
+
           maxY = findMaxY(dataset);
           minY = findMinY(dataset);
           yScale.domain([minY, maxY]);
@@ -278,8 +313,51 @@ d3.csv("data/Data.csv"). then( data => {
 
     legend.append("text")
            .attr("x", width + (margin.right/3) - 10)
-           .attr("y", (d, i) => (i + 1/2) * legendSpace)
+           .attr("y", (d, i) => (i + 1/2) * legendSpace + 4 )
            .text(d => d.name);
+
+    // Comparision button
+    svg.append("g")
+        .append("rect")
+        .attr("width", 42)
+        .attr("height", 10)
+        .attr("x", width + (margin.right/3) - 25)
+        .attr("y",(dataset.length + 1/2) * legendSpace - 4)
+        .attr("fill", "#e6e6e6")
+        .attr("id", "comparision-btn-left");
+    svg.append("g")
+        .append("rect")
+        .attr("width", 42)
+        .attr("height", 10)
+        .attr("x", width + (margin.right/3) +17 )
+        .attr("y",(dataset.length + 1/2) * legendSpace - 4)
+        .attr("fill", "#e6e6e6")
+        .attr("id", "comparision-btn-right");
+
+    svg.append("g")
+        .append("text")
+        .attr("class", "legend-box")
+        .attr("x", width + (margin.right/3) - 10)
+        .attr("y", (dataset.length + 1/2) * legendSpace + 4 )
+        .text("Comparison")
+        .on("click", function() {
+            comparision = !comparision;
+            d3.select(this)
+                .transition()
+                .attr("fill", comparision? "#ffffff" : "#000000");
+
+            d3.select("#comparision-btn-left")
+                .transition()
+                .attr("fill", comparision? "#91bfdb" : "#e6e6e6");
+
+            d3.select("#comparision-btn-right")
+                .transition()
+                .attr("fill", comparision? "#fc8d59" : "#e6e6e6");
+
+            if(dataSelect.size === 2 && comparision) {
+                drawComp();
+            }
+        });
 
     //For brusher of the slider bar at the bottom
     function brushed() {
@@ -326,6 +404,40 @@ d3.csv("data/Data.csv"). then( data => {
             .attr("d", d => d.visible ? line(d.values) : null);
 
     };
+
+    function drawComp() {
+        console.log("Draw Comparison");
+
+        var dataSelectArr = Array.from(dataSelect);
+        var subdata = dataSelectArr.map( i => dataset[i]);
+
+        console.log(subdata);
+
+        var compArea = svg.selectAll(".area-group")
+            .data(subdata)
+            .enter()
+            .append("g");
+
+        compArea.append("clipPath")
+            .attr("id", "clip-above")
+            .append("path")
+            .attr("d", valueArea.y0(minY(d.values.rating))(d.values));
+
+        compArea.append("clipPath")
+            .attr("id", "clip-below")
+            .append("path")
+            .attr("d", valueArea.y0(minY(d.values.rating))(d.values));
+
+        compArea.append("path")
+            .attr("class", "area above")
+            .attr("clip-path", "url(#clip-above)")
+            .attr("d", zeroArea(d.values));
+
+        compArea.append("path")
+            .attr("class", "area below")
+            .attr("clip-path", "url(#clip-below)")
+            .attr("d", zeroArearea(d.values));
+    }
 }); // End of read csv file.
 
 function findMaxY(data) {
