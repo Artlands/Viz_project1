@@ -46,8 +46,7 @@ var valueArea = d3.area()
     .curve(d3.curveLinear),
     zeroArea = d3.area()
     .x(d => xScale(d.date))
-    .y0(y(0))
-    .y1(y(0))
+    .y1(d => yScale(d.rating))
     .curve(d3.curveLinear);
 
 
@@ -418,25 +417,25 @@ d3.csv("data/Data.csv"). then( data => {
             .enter()
             .append("g");
 
-        compArea.append("clipPath")
-            .attr("id", "clip-above")
-            .append("path")
-            .attr("d", valueArea.y0(minY(d.values.rating))(d.values));
-
-        compArea.append("clipPath")
-            .attr("id", "clip-below")
-            .append("path")
-            .attr("d", valueArea.y0(minY(d.values.rating))(d.values));
-
-        compArea.append("path")
-            .attr("class", "area above")
-            .attr("clip-path", "url(#clip-above)")
-            .attr("d", zeroArea(d.values));
-
-        compArea.append("path")
-            .attr("class", "area below")
-            .attr("clip-path", "url(#clip-below)")
-            .attr("d", zeroArearea(d.values));
+        // compArea.append("clipPath")
+        //     .attr("id", "clip-above")
+        //     .append("path")
+        //     .attr("d", valueArea.y0(minY(d.values.rating))(d.values));
+        //
+        // compArea.append("clipPath")
+        //     .attr("id", "clip-below")
+        //     .append("path")
+        //     .attr("d", valueArea.y0(minY(d.values.rating))(d.values));
+        //
+        // compArea.append("path")
+        //     .attr("class", "area above")
+        //     .attr("clip-path", "url(#clip-above)")
+        //     .attr("d", zeroArea(d.values));
+        //
+        // compArea.append("path")
+        //     .attr("class", "area below")
+        //     .attr("clip-path", "url(#clip-below)")
+        //     .attr("d", zeroArearea(d.values));
     }
 }); // End of read csv file.
 
