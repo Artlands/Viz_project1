@@ -51,10 +51,12 @@ body {
 .area.above {
     opacity: 0.75;
     fill: #91bfdb;
+    pointer-events: none
 }
 .area.below {
     opacity: 0.75;
     fill: #fc8d59;
+    pointer-events: none
 }
 
 .legend-box {

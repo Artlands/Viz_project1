@@ -133,8 +133,7 @@ d3.csv("data/Data.csv"). then( data => {
       visible: (d["Country Name"] === "World" )
     };
   });
-  console.log(dataset);
-  console.log(dataset[0].values);
+  // console.log(dataset);
 
   // Add visible item index to dataSelect
     dataSelect.add(10);
@@ -420,18 +419,17 @@ d3.csv("data/Data.csv"). then( data => {
 
                 drawComp();
             } else {
-                areas.remove();
+                areas.transition().remove();
             }
         });
 
     //For brusher of the slider bar at the bottom
     function brushed() {
       xScale.domain(!d3.event.selection ? xScale2.domain() : d3.event.selection.map(xScale2.invert)); // If brush is empty then reset the Xscale domain to default, if not then make it the brush extent
-      reDraw();
-
       if(dataSelect.size === 2 && comparision) {
           reDrawComp();
       }
+      reDraw();
     };
 
     function brushended() {
@@ -452,12 +450,12 @@ d3.csv("data/Data.csv"). then( data => {
         d3.select(this).transition().call(d3.event.target.move, d1.map(xScale2));
         xScale.domain([d1[0], d1[1]]);
       }
-      reDraw();
 
       if(dataSelect.size === 2 && comparision) {
           reDrawComp();
       }
 
+      reDraw();
     };
 
     function reDraw() {
