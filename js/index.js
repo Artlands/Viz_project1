@@ -36,39 +36,42 @@ var xAxis = d3.axisBottom(xScale)
 var line = d3.line()
     .x(d => xScale(d.date))
     .y(d => yScale(d.rating))
-    .curve(d3.curveLinear)
+    .curve(d3.curveMonotoneX)
     .defined(d => !isNaN(d.rating));// Hiding line value for missing data
 
-//
+// For Comparision area
 var line0 = d3.line()
     .x(d => xScale(d.date))
     .y(d => yScale(d.rating0))
-    .curve(d3.curveLinear)
+    .curve(d3.curveMonotoneX)
     .defined( d=> ! isNaN(d.rating0));
 
 var area0 = d3.area()
     .defined( line0.defined())
     .x(line0.x())
-    .y1(line0.y());
+    .y1(line0.y())
+    .curve(d3.curveMonotoneX);
 
 var line1 = d3.line()
     .x(d => xScale(d.date))
     .y(d => yScale(d.rating1))
-    .curve(d3.curveLinear)
+    .curve(d3.curveMonotoneX)
     .defined( d=> ! isNaN(d.rating1));
 
 var area1 = d3.area()
     .defined( line1.defined())
     .x(line1.x())
-    .y1(line1.y());
+    .y1(line1.y())
+    .curve(d3.curveMonotoneX);
 
 
 // Store the Max and Min value of rating.
 var maxY, minY;
 
-// Comparison Flag
+// Comparison Flag and dataset
 var comparision = false,
-    dataSelect = new Set();
+    dataSelect = new Set(),
+    cmpdata = [];
 
 var svg = d3.select("body").append("svg")
             .attr("width", width + margin.left + margin.right)
@@ -291,7 +294,9 @@ d3.csv("data/Data.csv"). then( data => {
               d3.selectAll(".comparision-btn")
                   .transition()
                   .attr("opacity", 1);
+
           } else {
+              areas.remove();
               d3.selectAll(".comparision-btn")
                   .transition()
                   .attr("opacity", 0);
@@ -346,6 +351,8 @@ d3.csv("data/Data.csv"). then( data => {
            .attr("y", (d, i) => (i + 1/2) * legendSpace + 4 )
            .text(d => d.name);
 
+    var areas;
+
     // Comparision button
     svg.append("g")
         .attr("class", "comparision-btn")
@@ -393,14 +400,38 @@ d3.csv("data/Data.csv"). then( data => {
                 .attr("fill", comparision? "#fc8d59" : "#e6e6e6");
 
             if(dataSelect.size === 2 && comparision) {
+
+                var dataSelectArr = Array.from(dataSelect);
+                var subdata = dataSelectArr.map( i => dataset[i]);
+                cmpdata = [(subdata[0].values.map((d, i) => {
+                    return {
+                        date: d.date,
+                        rating0:subdata[0].values[i].rating,
+                        rating1: subdata[1].values[i].rating
+                    }
+                }))];
+
+                areas = svg.selectAll(".area-group")
+                    .data(cmpdata)
+                    .enter(cmpdata[0])
+                    .append("g")
+                    .attr("clip-path", "url(#clip)")
+                    .attr("class", "area-group");
+
                 drawComp();
+            } else {
+                areas.remove();
             }
         });
 
     //For brusher of the slider bar at the bottom
     function brushed() {
       xScale.domain(!d3.event.selection ? xScale2.domain() : d3.event.selection.map(xScale2.invert)); // If brush is empty then reset the Xscale domain to default, if not then make it the brush extent
-      redraw();
+      reDraw();
+
+      if(dataSelect.size === 2 && comparision) {
+          reDrawComp();
+      }
     };
 
     function brushended() {
@@ -421,10 +452,15 @@ d3.csv("data/Data.csv"). then( data => {
         d3.select(this).transition().call(d3.event.target.move, d1.map(xScale2));
         xScale.domain([d1[0], d1[1]]);
       }
-      redraw();
+      reDraw();
+
+      if(dataSelect.size === 2 && comparision) {
+          reDrawComp();
+      }
+
     };
 
-    function redraw() {
+    function reDraw() {
         svg.select(".x.axis")
             .transition()
             .call(xAxis);
@@ -444,45 +480,51 @@ d3.csv("data/Data.csv"). then( data => {
     };
 
     function drawComp() {
-        var dataSelectArr = Array.from(dataSelect);
-        var subdata = dataSelectArr.map( i => dataset[i]);
-        var predata = [subdata[0].values.map((d, i) => {
-            return {
-                date: d.date,
-                rating0:subdata[0].values[i].rating,
-                rating1: subdata[1].values[i].rating
-            }
-        })];
-
-        // console.log(predata);
-
-        var areas = svg.selectAll(".area-group")
-            .data(predata)
-            .enter(predata[0])
-            .append("g")
-            .attr("class", "area-group");
 
         areas.append("clipPath")
             .attr("id", "clip-above")
             .append("path")
+            .transition()
             .attr("d", area1.y0(0));
 
         areas.append("path")
             .attr("class", "area above")
             .attr("clip-path", "url(#clip-above)")
+            .transition()
             .attr("d", area0.y0(height));
-
 
         areas.append("clipPath")
             .attr("id", "clip-below")
             .append("path")
+            .transition()
             .attr("d", area1.y0(height));
 
         areas.append("path")
             .attr("class", "area below")
             .attr("clip-path", "url(#clip-below)")
+            .transition()
             .attr("d", area0.y0(0));
 
+    }
+
+    function reDrawComp() {
+        areas.select("#clip-above")
+             .select("path")
+             .transition()
+             .attr("d", area1.y0(0));
+
+        areas.select(".area .above")
+            .transition()
+            .attr("d", area0.y0(height));
+
+        areas.select("#clip-below")
+            .select("path")
+            .transition()
+            .attr("d", area1.y0(height));
+
+        areas.select(".area .below")
+            .transition()
+            .attr("d", area0.y0(0));
     }
 }); // End of read csv file.
 
