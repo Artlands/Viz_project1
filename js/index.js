@@ -14,7 +14,6 @@ var parseTime = d3.timeParse("%Y"),
 var xScale = d3.scaleTime().range([0, width]),
     xScale2 = d3.scaleTime().range([0, width]),
     xScale3 = d3.scaleTime().range([0, width]),
-
     yScale = d3.scaleLinear().range([height, 0]);
 
 // Define the axes
@@ -22,12 +21,10 @@ var xAxis = d3.axisBottom(xScale)
               .tickSize(-height),
     xAxis2 = d3.axisBottom(xScale2)
                .ticks(d3.timeYear.every(5)),
-
     xAxis3 = d3.axisBottom(xScale3)
                .ticks(d3.timeYear.every(1))
                .tickSize(-height2)
                .tickFormat( () => null ),
-
     yAxis = d3.axisLeft(yScale)
               .tickSize(-width)
               .tickFormat(d3.format(".2f"));
@@ -47,10 +44,10 @@ var line0 = d3.line()
     .defined( d=> ! isNaN(d.rating0));
 
 var area0 = d3.area()
-    .defined( line0.defined())
     .x(line0.x())
     .y1(line0.y())
-    .curve(d3.curveMonotoneX);
+    .curve(d3.curveMonotoneX)
+    .defined( line0.defined());
 
 var line1 = d3.line()
     .x(d => xScale(d.date))
@@ -59,11 +56,10 @@ var line1 = d3.line()
     .defined( d=> ! isNaN(d.rating1));
 
 var area1 = d3.area()
-    .defined( line1.defined())
     .x(line1.x())
     .y1(line1.y())
-    .curve(d3.curveMonotoneX);
-
+    .curve(d3.curveMonotoneX)
+    .defined( line1.defined());
 
 // Store the Max and Min value of rating.
 var maxY, minY;
@@ -107,7 +103,8 @@ var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE"
 
 // Read data from csv file and preprocess it
 d3.csv("data/Data.csv"). then( data => {
-  // Sort country names
+
+  // Sort country names, put world in the last place
   var countries = data
                 .filter(d =>!(("columns" in d) || (d["Country Name"] === "World")))
                 .sort((a,b) => {
@@ -116,12 +113,14 @@ d3.csv("data/Data.csv"). then( data => {
                   return (x < y)? -1 : 1;
                 });
   var world = data.filter(d => d["Country Name"] === "World");
+
   var dataset = countries.concat(world);
   var dateArr;
 
   dataset = dataset.map(d => {
     dateArr = Object.keys(d)
               .filter( d => d !== "Country Name" && d !== "Series Name");
+    // console.log(dateArr);
     return {
       name: d["Country Name"],
       values:dateArr.map( i => {
@@ -136,19 +135,16 @@ d3.csv("data/Data.csv"). then( data => {
   // console.log(dataset);
 
   // Add visible item index to dataSelect
-    dataSelect.add(10);
+  dataSelect.add(10);
 
-// Match a color to a country
+  // Match a color to a country
   color.domain(dataset.map(d => d.name));
 
   //yMin, yMax
-  var yMin = d3.min(dataset, d => d3.min(d.values, v => v.rating));
+  var yMin = d3.min(dataset, d => d3.min(d.values, v => v.rating)),
       yMax = d3.max(dataset, d => d3.max(d.values, v => v.rating));
 
   xScale.domain(d3.extent(dateArr.map(d => parseTime(d))));
-
-  // console.log(dateArr);
-
   yScale.domain([yMin, yMax]);
   // Setting a duplicate xdomain for burshing reference
   xScale2.domain(xScale.domain());
@@ -157,26 +153,21 @@ d3.csv("data/Data.csv"). then( data => {
 // --------------------------For slider part--------------------------
   var brush = d3.brushX()
                 .extent([[0,0], [width, height2]])
-                .on("brush", brushed)
+                .on("brush", brushing)
                 .on("end", brushended);
 
   // Create brushing xAxis
   context.append("g")
-         .attr("class", "axis axis--grid")
-         .attr("transform", "translate(0," + height2 + ")")
-         .call(xAxis3)
-         .selectAll(".tick")
-         .classed("tick--minor", d => d);
-
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height2 + ")")
+      .call(xAxis2);
   context.append("g")
-         .attr("class", "axis axis--x")
-         .attr("transform", "translate(0," + height2 + ")")
-         .call(xAxis2);
-
+      .attr("class", "axis axis--grid")
+      .attr("transform", "translate(0," + height2 + ")")
+      .call(xAxis3);
   context.append("g")
          .attr("class", "brush")
          .call(brush);
-
 // --------------------------End slider part--------------------------
 
   //Draw line graph
@@ -189,7 +180,7 @@ d3.csv("data/Data.csv"). then( data => {
      .attr("class", "y axis")
      .call(yAxis);
 
- svg.append("g")
+  svg.append("g")
      .append("text")
      .attr("transform", "rotate(-90)")
      .attr("y", 4)
@@ -203,15 +194,17 @@ d3.csv("data/Data.csv"). then( data => {
         .attr("class", "circle")
         .style("display", "none")
         .attr("pointer-events", "none");
-
   focus.append("circle")
         .attr("r", 5);
 
  // create a tooltip
   var Tooltip = d3.select("body")
       .append("div")
-      .style("opacity", 0)
+      .style("display", "none")
       .attr("class", "tooltip")
+
+  // Create areas variable
+  var areas;
 
  // Draw Line
   var lines = svg.selectAll(".line-group")
@@ -222,44 +215,41 @@ d3.csv("data/Data.csv"). then( data => {
       .attr("class", "line-group")
       .attr("id", d => "line-" + d.name.replace(" ", ""));
 
-    lines.append("path")
+  lines.append("path")
       .attr("class", "line")
       .attr("d", d => d.visible? line(d.values) : null)
       .style("stroke", d => color(d.name))
       .on("mouseover", function(d) {
-
           d3.selectAll('.line').style("opacity", 0.2);
           d3.select(this).style("opacity", 1).style("stroke-width", "2.5px");
           d3.selectAll(".legend").style("opacity", 0.2);
           d3.select("#leg-" + d.name.replace(" ","")).style("opacity", 1);
 
           // Show circle
+          var x0 = xScale.invert(d3.mouse(this)[0]),
+              x1 = d3.timeYear.round(x0),
+              i = bisectDate(d.values, x1);
+          focus.attr("transform", "translate(" + xScale(x1) + "," + yScale(d.values[i].rating) + ")"); // Find position
           focus.style("display", null);
           focus.selectAll("circle")
               .attr("fill", color(d.name));
 
-          var x0 = xScale.invert(d3.mouse(this)[0]),
-              x1 = d3.timeYear.round(x0),
-              i = bisectDate(d.values, x1);
-
-          focus.attr("transform", "translate(" + xScale(x1) + "," + yScale(d.values[i].rating) + ")");
-
           // Show tooltip
-          Tooltip.style("opacity", 1)
-              .html( "<strong>" + d.name + "</strong>"  + "<br>" + " GDP Growth in " + "<strong>" + d.values[i].date.getFullYear()
-                  + "</strong> :" + "<br>" + "<strong>" + d.values[i].rating.toFixed(2) + "%" + "</strong>" )
+          Tooltip.style("display", null)
+              .html( "<strong>" + d.name + "</strong>" + "<br>"
+                  + " GDP Growth in " + "<strong>" + d.values[i].date.getFullYear() + "</strong> :" + "<br>"
+                  + "<strong>" + d.values[i].rating.toFixed(2) + "%" + "</strong>" )
               .style("left", (d3.mouse(this)[0]+70) + "px")
               .style("top", (d3.mouse(this)[1]) + "px");
-
        })
-      .on("mouseout", function(d) {
+      .on("mouseout", function() {
           d3.selectAll('.line').style("opacity", 1);
           d3.select(this).style("stroke-width", "1.5px");
           d3.selectAll(".legend").style("opacity", 1);
           focus.style("display", "none");
+
           // Hide tooltip
-          Tooltip
-              .style("opacity", 0)
+          Tooltip.style("display", "none")
        });
 
   // Draw legend
@@ -281,38 +271,38 @@ d3.csv("data/Data.csv"). then( data => {
       .on("click", (d, i) => {
           d.visible = ! d.visible;
 
+          //update dataSelect set
           if (d.visible) {
-              dataSelect.add(i)
+              dataSelect.add(i);
           }
           else {
-              dataSelect.delete(i)
+              dataSelect.delete(i);
           }
 
           if(dataSelect.size === 2 ) {
-
               d3.selectAll(".comparision-btn")
                   .transition()
                   .attr("opacity", 1);
-
           } else {
-              areas.remove();
+              if(!svg.select(".area-group").empty()) areas.remove();
+              comparision = !comparision;
               d3.selectAll(".comparision-btn")
                   .transition()
                   .attr("opacity", 0);
           }
 
+          // Update appearance of comparision button
           d3.select("#comparision-btn-left")
               .transition()
               .attr("fill", "#e6e6e6");
-
           d3.select("#comparision-btn-right")
               .transition()
               .attr("fill", "#e6e6e6");
-
           d3.select("#comparision-text")
               .transition()
               .attr("fill", "#000000");
 
+          //Update axis
           maxY = findMaxY(dataset);
           minY = findMinY(dataset);
           yScale.domain([minY, maxY]);
@@ -320,10 +310,10 @@ d3.csv("data/Data.csv"). then( data => {
               .transition()
               .call(yAxis);
 
+          // Update graph
           lines.select("path")
               .transition()
               .attr("d", d=> d.visible? line(d.values) : null);
-
           legend.select("rect")
               .transition()
               .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
@@ -332,25 +322,17 @@ d3.csv("data/Data.csv"). then( data => {
           d3.select(this)
               .transition()
              .attr("fill", d =>color(d.name));
-          d3.select("#line-" + d.name.replace(" ",""))
-             .transition()
-             .style("stroke-width", 1.5);
          })
          .on("mouseout", function(d) {
            d3.select(this)
              .transition()
              .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
-           d3.select("#line-" + d.name.replace(" ",""))
-             .transition()
-             .style("stroke-width", 0.5);
          });
 
     legend.append("text")
            .attr("x", width + (margin.right/3) - 10)
            .attr("y", (d, i) => (i + 1/2) * legendSpace + 4 )
            .text(d => d.name);
-
-    var areas;
 
     // Comparision button
     svg.append("g")
@@ -424,7 +406,7 @@ d3.csv("data/Data.csv"). then( data => {
         });
 
     //For brusher of the slider bar at the bottom
-    function brushed() {
+    function brushing() {
       xScale.domain(!d3.event.selection ? xScale2.domain() : d3.event.selection.map(xScale2.invert)); // If brush is empty then reset the Xscale domain to default, if not then make it the brush extent
       if(dataSelect.size === 2 && comparision) {
           reDrawComp();
