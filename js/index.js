@@ -39,12 +39,29 @@ var line = d3.line()
     .curve(d3.curveLinear)
     .defined(d => !isNaN(d.rating));// Hiding line value for missing data
 
-// Define the area
-var valueArea = d3.area()
+//
+var line0 = d3.line()
     .x(d => xScale(d.date))
-    .y(d => yScale(d.rating))
+    .y(d => yScale(d.rating0))
     .curve(d3.curveLinear)
-    .defined(d => !isNaN(d.rating)); // skip missing data,
+    .defined( d=> ! isNaN(d.rating0));
+
+var area0 = d3.area()
+    .defined( line0.defined())
+    .x(line0.x())
+    .y1(line0.y());
+
+var line1 = d3.line()
+    .x(d => xScale(d.date))
+    .y(d => yScale(d.rating1))
+    .curve(d3.curveLinear)
+    .defined( d=> ! isNaN(d.rating1));
+
+var area1 = d3.area()
+    .defined( line1.defined())
+    .x(line1.x())
+    .y1(line1.y());
+
 
 // Store the Max and Min value of rating.
 var maxY, minY;
@@ -113,7 +130,8 @@ d3.csv("data/Data.csv"). then( data => {
       visible: (d["Country Name"] === "World" )
     };
   });
-  // console.log(dataset);
+  console.log(dataset);
+  console.log(dataset[0].values);
 
   // Add visible item index to dataSelect
     dataSelect.add(10);
@@ -268,14 +286,14 @@ d3.csv("data/Data.csv"). then( data => {
               dataSelect.delete(i)
           }
 
-          console.log(dataSelect.size);
-
           if(dataSelect.size === 2 ) {
 
               d3.selectAll(".comparision-btn")
+                  .transition()
                   .attr("opacity", 1);
           } else {
               d3.selectAll(".comparision-btn")
+                  .transition()
                   .attr("opacity", 0);
           }
 
@@ -426,39 +444,45 @@ d3.csv("data/Data.csv"). then( data => {
     };
 
     function drawComp() {
-        console.log("Draw Comparison");
-
         var dataSelectArr = Array.from(dataSelect);
         var subdata = dataSelectArr.map( i => dataset[i]);
+        var predata = [subdata[0].values.map((d, i) => {
+            return {
+                date: d.date,
+                rating0:subdata[0].values[i].rating,
+                rating1: subdata[1].values[i].rating
+            }
+        })];
 
-        console.log(subdata);
+        // console.log(predata);
 
-        var compArea = svg.selectAll(".area-group")
-            .data(subdata)
-            .enter(d => d.values)
+        var areas = svg.selectAll(".area-group")
+            .data(predata)
+            .enter(predata[0])
             .append("g")
-            .attr("d", valueArea );
+            .attr("class", "area-group");
+
+        areas.append("clipPath")
+            .attr("id", "clip-above")
+            .append("path")
+            .attr("d", area1.y0(0));
+
+        areas.append("path")
+            .attr("class", "area above")
+            .attr("clip-path", "url(#clip-above)")
+            .attr("d", area0.y0(height));
 
 
-        // compArea.append("clipPath")
-        //     .attr("id", "clip-above")
-        //     .append("path")
-        //     .attr("d", valueArea.y0(minY(d.values.rating))(d.values));
-        //
-        // compArea.append("clipPath")
-        //     .attr("id", "clip-below")
-        //     .append("path")
-        //     .attr("d", valueArea.y0(minY(d.values.rating))(d.values));
-        //
-        // compArea.append("path")
-        //     .attr("class", "area above")
-        //     .attr("clip-path", "url(#clip-above)")
-        //     .attr("d", zeroArea(d.values));
-        //
-        // compArea.append("path")
-        //     .attr("class", "area below")
-        //     .attr("clip-path", "url(#clip-below)")
-        //     .attr("d", zeroArearea(d.values));
+        areas.append("clipPath")
+            .attr("id", "clip-below")
+            .append("path")
+            .attr("d", area1.y0(height));
+
+        areas.append("path")
+            .attr("class", "area below")
+            .attr("clip-path", "url(#clip-below)")
+            .attr("d", area0.y0(0));
+
     }
 }); // End of read csv file.
 

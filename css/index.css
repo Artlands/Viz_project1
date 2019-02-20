@@ -49,10 +49,12 @@ body {
 }
 
 .area.above {
-    fill: #fc8d59;
+    opacity: 0.75;
+    fill: #91bfdb;
 }
 .area.below {
-    fill: #91bfdb;
+    opacity: 0.75;
+    fill: #fc8d59;
 }
 
 .legend-box {
