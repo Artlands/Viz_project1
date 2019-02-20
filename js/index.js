@@ -42,13 +42,9 @@ var line = d3.line()
 // Define the area
 var valueArea = d3.area()
     .x(d => xScale(d.date))
-    .y1(d => yScale(d.rating))
-    .curve(d3.curveLinear),
-    zeroArea = d3.area()
-    .x(d => xScale(d.date))
-    .y1(d => yScale(d.rating))
-    .curve(d3.curveLinear);
-
+    .y(d => yScale(d.rating))
+    .curve(d3.curveLinear)
+    .defined(d => !isNaN(d.rating)); // skip missing data,
 
 // Store the Max and Min value of rating.
 var maxY, minY;
@@ -272,11 +268,28 @@ d3.csv("data/Data.csv"). then( data => {
               dataSelect.delete(i)
           }
 
-          // console.log(dataSelect.size);
+          console.log(dataSelect.size);
 
-          if(dataSelect.size === 2 && comparision) {
-              drawComp();
+          if(dataSelect.size === 2 ) {
+
+              d3.selectAll(".comparision-btn")
+                  .attr("opacity", 1);
+          } else {
+              d3.selectAll(".comparision-btn")
+                  .attr("opacity", 0);
           }
+
+          d3.select("#comparision-btn-left")
+              .transition()
+              .attr("fill", "#e6e6e6");
+
+          d3.select("#comparision-btn-right")
+              .transition()
+              .attr("fill", "#e6e6e6");
+
+          d3.select("#comparision-text")
+              .transition()
+              .attr("fill", "#000000");
 
           maxY = findMaxY(dataset);
           minY = findMinY(dataset);
@@ -317,28 +330,36 @@ d3.csv("data/Data.csv"). then( data => {
 
     // Comparision button
     svg.append("g")
+        .attr("class", "comparision-btn")
+        .attr("opacity", "0")
         .append("rect")
         .attr("width", 42)
-        .attr("height", 10)
+        .attr("height", 16)
         .attr("x", width + (margin.right/3) - 25)
-        .attr("y",(dataset.length + 1/2) * legendSpace - 4)
+        .attr("y",(dataset.length + 1/2) * legendSpace - 7)
         .attr("fill", "#e6e6e6")
         .attr("id", "comparision-btn-left");
+
     svg.append("g")
+        .attr("class", "comparision-btn")
+        .attr("opacity", "0")
         .append("rect")
         .attr("width", 42)
-        .attr("height", 10)
+        .attr("height", 16)
         .attr("x", width + (margin.right/3) +17 )
-        .attr("y",(dataset.length + 1/2) * legendSpace - 4)
+        .attr("y",(dataset.length + 1/2) * legendSpace - 7)
         .attr("fill", "#e6e6e6")
         .attr("id", "comparision-btn-right");
 
     svg.append("g")
+        .attr("class", "comparision-btn")
+        .attr("opacity", "0")
         .append("text")
         .attr("class", "legend-box")
         .attr("x", width + (margin.right/3) - 10)
         .attr("y", (dataset.length + 1/2) * legendSpace + 4 )
         .text("Comparison")
+        .attr("id", "comparision-text")
         .on("click", function() {
             comparision = !comparision;
             d3.select(this)
@@ -414,8 +435,10 @@ d3.csv("data/Data.csv"). then( data => {
 
         var compArea = svg.selectAll(".area-group")
             .data(subdata)
-            .enter()
-            .append("g");
+            .enter(d => d.values)
+            .append("g")
+            .attr("d", valueArea );
+
 
         // compArea.append("clipPath")
         //     .attr("id", "clip-above")
