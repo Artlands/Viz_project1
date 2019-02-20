@@ -513,7 +513,7 @@ d3.csv("data/Data.csv"). then( data => {
              .transition()
              .attr("d", area1.y0(0));
 
-        areas.select(".area .above")
+        areas.select(".above")
             .transition()
             .attr("d", area0.y0(height));
 
@@ -522,7 +522,7 @@ d3.csv("data/Data.csv"). then( data => {
             .transition()
             .attr("d", area1.y0(height));
 
-        areas.select(".area .below")
+        areas.select(".below")
             .transition()
             .attr("d", area0.y0(0));
     }
