@@ -64,6 +64,9 @@ var area1 = d3.area()
 // Store the Max and Min value of rating.
 var maxY, minY;
 
+var light = false,
+    greyBtn = "#d7d7d7";
+
 // Comparison Flag and dataset
 var comparision = false,
     dataSelect = new Set(),
@@ -101,7 +104,7 @@ svg.append("defs")
 // --------------------------End slider part--------------------------
 
 // 11 Custom colors
-var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#d41c00", "#E37756", "#E2AA59","#e3e335", "#ffffff"]);
+var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#d41c00", "#E37756", "#E2AA59","#e3e335", "#A1A1A1"]);
 
 // Read data from csv file and preprocess it
 d3.csv("data/Data.csv"). then( data => {
@@ -189,7 +192,8 @@ d3.csv("data/Data.csv"). then( data => {
      .attr("x", -8)
      .attr("dy", "0.7em")
      .style("text-anchor", "end")
-     .text("GDP growth (annual %)");
+     .text("GDP growth (annual %)")
+     .attr("fill", "#bfbfbf");
 
  // Draw focus
   var focus = svg.append("g")
@@ -268,7 +272,7 @@ d3.csv("data/Data.csv"). then( data => {
       .attr("height", 10)
       .attr("x", width + (margin.right/3) - 25)
       .attr("y", (d, i) => (i + 1/2) * legendSpace - 4)
-      .attr("fill", d => d.visible? color(d.name) : "#A1A1A1")
+      .attr("fill", d => d.visible? color(d.name) : greyBtn)
       .attr("class", "legend-box")
       .on("click", (d, i) => {
           // Show the line that has been hide
@@ -301,10 +305,10 @@ d3.csv("data/Data.csv"). then( data => {
           // Update appearance of comparision button
           d3.select("#comparision-btn-left")
               .transition()
-              .attr("fill", "#A1A1A1");
+              .attr("fill", greyBtn);
           d3.select("#comparision-btn-right")
               .transition()
-              .attr("fill", "#A1A1A1");
+              .attr("fill", greyBtn);
           d3.select("#comparision-text")
               .transition()
               .attr("fill", "#000000");
@@ -323,7 +327,7 @@ d3.csv("data/Data.csv"). then( data => {
               .attr("d", d=> d.visible? line(d.values) : null);
           legend.select("rect")
               .transition()
-              .attr("fill", d => d.visible? color(d.name) : "#A1A1A1");
+              .attr("fill", d => d.visible? color(d.name) : greyBtn);
          })
       .on("mouseover", function(d) {
           d3.select(this)
@@ -333,14 +337,28 @@ d3.csv("data/Data.csv"). then( data => {
          .on("mouseout", function(d) {
            d3.select(this)
              .transition()
-             .attr("fill", d => d.visible? color(d.name) : "#A1A1A1");
+             .attr("fill", d => d.visible? color(d.name) : greyBtn);
          });
 
     legend.append("text")
            .attr("x", width + (margin.right/3) - 10)
            .attr("y", (d, i) => (i + 1/2) * legendSpace + 4 )
-           .attr("fill", "#bfbfbf")
-           .text(d => d.name);
+           .attr("fill", greyBtn)
+           .text(d => d.name)
+           .on("click", () => {
+               light = !light;
+               if(light) {
+                   d3.select("body").style("color", "black");
+                   d3.select("body").style("background-color", "white");
+                   svg.selectAll("text").attr("fill", "black");
+                   svg.select("#comparision-text").attr("fill", comparision? "#ffffff" : "#000000");
+               } else {
+                   d3.select("body").style("color", "#bfbfbf");
+                   d3.select("body").style("background-color", "black");
+                   svg.selectAll("text").attr("fill", "#bfbfbf");
+                   svg.select("#comparision-text").attr("fill", comparision? "#ffffff" : "#000000");
+               }
+           });
 
     // Comparision button
     svg.append("g")
@@ -351,7 +369,7 @@ d3.csv("data/Data.csv"). then( data => {
         .attr("height", 16)
         .attr("x", width + (margin.right/3) - 25)
         .attr("y",(dataset.length + 1/2) * legendSpace - 7)
-        .attr("fill", "#e6e6e6")
+        .attr("fill", greyBtn)
         .attr("id", "comparision-btn-left");
 
     svg.append("g")
@@ -362,7 +380,7 @@ d3.csv("data/Data.csv"). then( data => {
         .attr("height", 16)
         .attr("x", width + (margin.right/3) +17 )
         .attr("y",(dataset.length + 1/2) * legendSpace - 7)
-        .attr("fill", "#e6e6e6")
+        .attr("fill", greyBtn)
         .attr("id", "comparision-btn-right");
 
     svg.append("g")
@@ -382,11 +400,11 @@ d3.csv("data/Data.csv"). then( data => {
 
             d3.select("#comparision-btn-left")
                 .transition()
-                .attr("fill", comparision? "#91bfdb" : "#e6e6e6");
+                .attr("fill", comparision? "#91bfdb" : greyBtn);
 
             d3.select("#comparision-btn-right")
                 .transition()
-                .attr("fill", comparision? "#fc8d59" : "#e6e6e6");
+                .attr("fill", comparision? "#fc8d59" : greyBtn);
 
             if(dataSelect.size === 2 && comparision) {
                 // Set to Array
