@@ -67,6 +67,8 @@ var maxY, minY;
 // Comparison Flag and dataset
 var comparision = false,
     dataSelect = new Set(),
+    dataSelectArr = [],
+    temp = -1,
     cmpdata = [];
 
 var svg = d3.select("body").append("svg")
@@ -99,7 +101,7 @@ svg.append("defs")
 // --------------------------End slider part--------------------------
 
 // 11 Custom colors
-var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#d41c00", "#E37756", "#E2AA59","#e3e335", "#7d7c7b"]);
+var color = d3.scaleOrdinal().range(["#48A36D", "#80CEAA", "#7EC4CF",  "#809ECE", "#9E81CC", "#CE80B0", "#d41c00", "#E37756", "#E2AA59","#e3e335", "#ffffff"]);
 
 // Read data from csv file and preprocess it
 d3.csv("data/Data.csv"). then( data => {
@@ -266,9 +268,14 @@ d3.csv("data/Data.csv"). then( data => {
       .attr("height", 10)
       .attr("x", width + (margin.right/3) - 25)
       .attr("y", (d, i) => (i + 1/2) * legendSpace - 4)
-      .attr("fill", d => d.visible? color(d.name) : "#e6e6e6")
+      .attr("fill", d => d.visible? color(d.name) : "#A1A1A1")
       .attr("class", "legend-box")
       .on("click", (d, i) => {
+          // Show the line that has been hide
+          if(temp !== -1) {
+              d3.select("#line-" + dataset[temp].name.replace(" ", "")).attr("display", null);
+          }
+
           d.visible = ! d.visible;
 
           //update dataSelect set
@@ -285,7 +292,7 @@ d3.csv("data/Data.csv"). then( data => {
                   .attr("opacity", 1);
           } else {
               if(!svg.select(".area-group").empty()) areas.remove();
-              comparision = !comparision;
+              comparision = false;
               d3.selectAll(".comparision-btn")
                   .transition()
                   .attr("opacity", 0);
@@ -294,10 +301,10 @@ d3.csv("data/Data.csv"). then( data => {
           // Update appearance of comparision button
           d3.select("#comparision-btn-left")
               .transition()
-              .attr("fill", "#e6e6e6");
+              .attr("fill", "#A1A1A1");
           d3.select("#comparision-btn-right")
               .transition()
-              .attr("fill", "#e6e6e6");
+              .attr("fill", "#A1A1A1");
           d3.select("#comparision-text")
               .transition()
               .attr("fill", "#000000");
@@ -316,7 +323,7 @@ d3.csv("data/Data.csv"). then( data => {
               .attr("d", d=> d.visible? line(d.values) : null);
           legend.select("rect")
               .transition()
-              .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
+              .attr("fill", d => d.visible? color(d.name) : "#A1A1A1");
          })
       .on("mouseover", function(d) {
           d3.select(this)
@@ -326,12 +333,13 @@ d3.csv("data/Data.csv"). then( data => {
          .on("mouseout", function(d) {
            d3.select(this)
              .transition()
-             .attr("fill", d => d.visible? color(d.name) : "#e6e6e6");
+             .attr("fill", d => d.visible? color(d.name) : "#A1A1A1");
          });
 
     legend.append("text")
            .attr("x", width + (margin.right/3) - 10)
            .attr("y", (d, i) => (i + 1/2) * legendSpace + 4 )
+           .attr("fill", "#bfbfbf")
            .text(d => d.name);
 
     // Comparision button
@@ -381,8 +389,13 @@ d3.csv("data/Data.csv"). then( data => {
                 .attr("fill", comparision? "#fc8d59" : "#e6e6e6");
 
             if(dataSelect.size === 2 && comparision) {
+                // Set to Array
+                dataSelectArr = Array.from(dataSelect);
+                // Hide the line of the first item
+                temp = dataSelectArr[0];
+                d3.select("#line-" + dataset[temp].name.replace(" ", "")).attr("display", "none");
 
-                var dataSelectArr = Array.from(dataSelect);
+                // Select date from dataset
                 var subdata = dataSelectArr.map( i => dataset[i]);
                 cmpdata = [(subdata[0].values.map((d, i) => {
                     return {
@@ -398,10 +411,12 @@ d3.csv("data/Data.csv"). then( data => {
                     .append("g")
                     .attr("clip-path", "url(#clip)")
                     .attr("class", "area-group");
-
                 drawComp();
             } else {
-                areas.transition().remove();
+                comparision = false;
+                // Show the second item
+                d3.select("#line-" + dataset[dataSelectArr[0]].name.replace(" ", "")).attr("display", null);
+                areas.remove();
             }
         });
 
@@ -412,12 +427,12 @@ d3.csv("data/Data.csv"). then( data => {
           reDrawComp();
       }
       reDraw();
-    };
+    }
 
     function brushended() {
       if( !d3.event.sourceEvent) {
         return; // Only transition after input;
-      };
+      }
       if( !d3.event.selection) {
         xScale.domain(xScale2.domain());
       }
@@ -436,9 +451,8 @@ d3.csv("data/Data.csv"). then( data => {
       if(dataSelect.size === 2 && comparision) {
           reDrawComp();
       }
-
       reDraw();
-    };
+    }
 
     function reDraw() {
         svg.select(".x.axis")
@@ -457,7 +471,7 @@ d3.csv("data/Data.csv"). then( data => {
             .transition()
             .attr("d", d => d.visible ? line(d.values) : null);
 
-    };
+    }
 
     function drawComp() {
 
@@ -515,7 +529,7 @@ function findMaxY(data) {
     }
   });
   return d3.max(maxYValues);
-};
+}
 
 function findMinY(data) {
   var minYValues = data.map( d => {
@@ -524,6 +538,6 @@ function findMinY(data) {
     }
   });
   return d3.min(minYValues);
-};
+}
 
 

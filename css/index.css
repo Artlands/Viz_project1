@@ -1,5 +1,7 @@
 body {
   font: 10px sans-serif;
+  color: #bfbfbf;
+  background-color: black;
 }
 
 .line {
@@ -39,7 +41,7 @@ body {
 
 .axis--x .tick line {
   stroke: #bfbfbf;
-	stroke-dasharray: 0;
+  stroke-dasharray: 0;
   stroke-opacity: 1;
 }
 
@@ -49,12 +51,12 @@ body {
 }
 
 .area.above {
-    opacity: 0.5;
+    opacity: 0.75;
     fill: #91bfdb;
     pointer-events: none;
 }
 .area.below {
-    opacity: 0.5;
+    opacity: 0.75;
     fill: #fc8d59;
     pointer-events: none;
 }
@@ -68,22 +70,6 @@ body {
   stroke-width: 1px;
 }
 
-.hover-line {
-  stroke: #bfbfbf;
-  fill: none;
-  stroke-width: 1px;
-  left: 10px;
-  shape-rendering: crispEdges;
-  opacity: 1e-6;
-}
-
-.hover-text {
-  stroke: none;
-  font-size: 30px;
-  font-weight: bold;
-  fill: #000000;
-}
-
 .tooltip {
   font-weight: normal;
 }
@@ -94,8 +80,9 @@ body {
 }
 .tooltip {
     position:absolute;
+    color: #000000;
     z-index:1000;
-    background:rgba(255,255,255,0.75);
+    background:rgba(255,255,255,0.5);
     padding:5px 10px;
     border-radius:5px;
     font-size:10px;
