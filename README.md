@@ -2,15 +2,15 @@
 
 ### Overview
 
-This is a web application written in JavaScript using D3.js library to visualize the GDP growth rate of ten countries and one world average rate for the last 50 years. Data was obtained from World Development Indicators on 
+This is a web application written in JavaScript using D3.js library to visualize the GDP growth rate of ten countries and one world average rate for the last 50 years. Data was obtained from World Development Indicators on The Wrold Bank (https://datacatalog.worldbank.org/dataset/world-development-indicators), dates for data range from 1969 to 2018. This web application visualizes the GDP growth rating for each country as well as provides comparision between two countries/ selected entries. User can also select a specific range of date to show the details of the visualized graph. 
 
-[The World Bank]: https://datacatalog.worldbank.org/dataset/world-development-indicators
-
- website, dates for data range from 1969 to 2018. This web application visualizes the GDP growth rating for each country as well as provides comparision between two countries/ selected items. User can also select a specific range of date to show the details of the visualized graph. A presentation video clip can be found here. 
+A presentation video clip can be found here. 
 
 ### UI Design
 
 There are 3 components: Canvas, on the top-left part of the windows; Legend, on the top-right part and Slider, on the downmost.
+
+![](https://github.com/Artlands/Viz_project1/blob/master/img/ui.png)
 
 ##### Canvas
 
